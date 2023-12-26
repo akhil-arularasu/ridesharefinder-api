@@ -86,6 +86,7 @@ def apiregister():
 
 
 @api_route.route("/create", methods=["POST"])
+#@jwt_required()
 def apicreate():
         try:
             rides_dict = request.json

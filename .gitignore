@@ -3,3 +3,4 @@ __pycache__
 venv
 migrations/
 rides.sqlite3
+.env

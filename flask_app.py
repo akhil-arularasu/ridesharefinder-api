@@ -28,28 +28,30 @@ from flask import Flask, jsonify, request, redirect
 from marshmallow import Schema, fields, ValidationError, validate, validates
 from api_routes import api_route
 from extension import init_mail, send_json_email, send_reset_email, RegisterSchema, my_func
-
+from flask_cors import CORS, cross_origin
+import os
 
 app = Flask(__name__)
-app.secret_key = "hello"
-app.config ['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:rideshare@localhost:5432/postgres'
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.permanent_session_lifetime = timedelta(days=30)
+app.config.from_object('config.Config')
 
-app.config["SECURITY_PASSWORD_SALT"] = 'my_precious_two'
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 465
-app.config["MAIL_USE_TLS"] = False
-app.config["MAIL_USE_SSL"] = True
-# gmail authentication
-app.config["MAIL_USERNAME"] = "ridesharefinder@gmail.com"
-app.config["MAIL_PASSWORD"] = "zzplvgkjffoxbhvk"
-app.config["MAIL_DEFAULT_SENDER"] = "ridesharefinder@gmail.com"
 mail = Mail(app)
-app.config["LOGIN_MANAGER_LOGIN_VIEW"] = 'login'
-app.config["LOGIN_MANAGER_LOGIN_MESSAGE_CATEGORY"] = 'danger'
-app.config['SESSION_TYPE'] = 'filesystem'  # You can choose another session type if needed
-app.config['JWT_SECRET_KEY'] = 'mykey'  # Replace with a strong secret key
+#if (app.config ['ENVIRONMENT'] == 'dev'):
+#    print('Development env. NO CORS')
+#else:
+
+CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+app.permanent_session_lifetime = timedelta(days=30)
+print(app.config ['SQLALCHEMY_DATABASE_URI'])
+if (app.config ['ENVIRONMENT'] == 'dev'):
+    print('Development Environment')
+    app.config ['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:rideshare@localhost:5432/postgres'
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# gmail authentication
+
+
 jwt = JWTManager(app)
 
 SWAGGER_URL = '/swagger'
@@ -121,11 +123,6 @@ def suggestions():
     return {"testarray":["test1","test2","test3"]}
     
 
-
-@app.route("/recognition")
-def recognition():
-    return render_template('recognition.html')
-
 '''
 @app.route("/tutorial")
 def tutorial():
@@ -184,6 +181,12 @@ if __name__ == "__main__":
         # db.session.add_all([college1, college2, location1, location2, location3, location4, location5])
         # db.session.commit()
 
-        if 'liveconsole' not in gethostname():
+        port = int(os.environ.get("PORT",5000))
+        if (app.config ['ENVIRONMENT'] == 'dev'):
             app.run(debug=True)
+        else:
+            app.run(host="0.0.0.0",port=port)
+
+    #    if 'liveconsole' not in gethostname():
+    #        app.run(debug=True)
         
