@@ -45,8 +45,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 app.permanent_session_lifetime = timedelta(days=30)
 print(app.config ['SQLALCHEMY_DATABASE_URI'])
 if (app.config ['ENVIRONMENT'] == 'dev'):
-    print('Development Environment')
-    app.config ['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:rideshare@localhost:5432/postgres'
+     print('Development Environment')
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # gmail authentication

@@ -86,7 +86,6 @@ def apiregister():
 
 
 @api_route.route("/create", methods=["POST"])
-#@jwt_required()
 def apicreate():
         try:
             rides_dict = request.json
@@ -232,7 +231,6 @@ def get_locations():
         return jsonify({'error': str(e)}), 500
 
 @api_route.route("/join", methods=["POST"])
-@jwt_required()
 def apiJoin():
     try:
         rides_dict = request.json
