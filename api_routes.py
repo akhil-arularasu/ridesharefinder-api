@@ -15,7 +15,7 @@ import json, phonenumbers
 from flask_session import Session
 from decouple import config
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_login import LoginManager, login_user, logout_user, login_required
 from token_creator import generate_confirmation_token, confirm_token
 from email_sender import send_email
 from flask_mail import Mail, Message
@@ -86,13 +86,12 @@ def apiregister():
 
 
 @api_route.route("/create", methods=["POST"])
+@jwt_required()
 def apicreate():
         try:
             rides_dict = request.json
             print("Received data:", rides_dict)  
-            #telNumber = current_user.telNumber
-            #college_id = current_user.college_id
-            userId = current_user.id
+            userId = get_jwt_identity()
             seatsRemaining = rides_dict['seatsRemaining']
             rideDate = rides_dict['rideDate']
             rideTime = datetime.strptime(rides_dict['rideTime'], '%H:%M').time()
@@ -127,7 +126,7 @@ def apicreate():
             return jsonify({"error": str(e)})
        
 @api_route.route("/search", methods=["GET"])
-#@jwt_required()
+@jwt_required()
 def apiridesQuery():
         try:
             from_location_id = request.args.get("fromLocationId")
@@ -168,9 +167,12 @@ def apiridesQuery():
 
 
 @api_route.route("/myRideSearch", methods=["GET"])
+@jwt_required()
 def apiMyRidesQuery():
         try:
-            userId = current_user.id
+            print('myRideSearch')
+            print('JWT', get_jwt_identity())
+            userId = get_jwt_identity()
             print('userId', userId)
             # Query to get list of ride IDs
             ride_ids_subquery = db.session.query(RideUser.ride_id).filter(
@@ -209,11 +211,10 @@ def apiMyRidesQuery():
             return jsonify({"error": str(e)})
 
 @api_route.route("/locations", methods=["GET"])
+@jwt_required()
 def get_locations():
     try:
         college_id = 1
-        print('here')
-        print(college_id)
 
         query = Location.query.filter(Location.college_id == college_id).all()
 
@@ -231,11 +232,12 @@ def get_locations():
         return jsonify({'error': str(e)}), 500
 
 @api_route.route("/join", methods=["POST"])
+@jwt_required()
 def apiJoin():
     try:
         rides_dict = request.json
         ride_id = rides_dict['ride_id']
-        userId = current_user.id
+        userId = get_jwt_identity()
         
         # Retrieve the ride record
         currentRide = Ride.query.filter_by(id=ride_id).first_or_404()
@@ -267,12 +269,12 @@ def apiJoin():
         return jsonify({"error": str(e)})
 
 @api_route.route("/leave", methods=["POST"])
+@jwt_required()
 def apiLeave():
     try:
-        print('hi')
         rides_dict = request.json
         ride_id = rides_dict['rideId']
-        userId = current_user.id
+        userId = get_jwt_identity()
         currentRide = Ride.query.filter(Ride.id == ride_id).first_or_404()
         currentRideUser = RideUser.query.filter_by(ride_id=ride_id, user_id = userId).first_or_404()
         if currentRideUser:

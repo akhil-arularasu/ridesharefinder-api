@@ -39,7 +39,7 @@ mail = Mail(app)
 #    print('Development env. NO CORS')
 #else:
 
-CORS(app)
+CORS(app, supports_credentials=True, expose_headers=['Authorization'])
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 app.permanent_session_lifetime = timedelta(days=30)
