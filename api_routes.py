@@ -179,7 +179,7 @@ def apiMyRidesQuery():
                 RideUser.user_id == userId,
                 RideUser.isDeleted == False
             ).subquery()
-
+            print('ride_ids', ride_ids_subquery)
             # Query Ride model using ride IDs
             rides = db.session.query(
                 Ride.id,
@@ -192,6 +192,8 @@ def apiMyRidesQuery():
                 Ride.id.in_(ride_ids_subquery),
                 Ride.isDeleted == False
             ).order_by(Ride.rideTime).all()
+
+            print('rides', rides)
 
             # Format the results as a list of dicts or similar, depending on your requirement
             rides_list = [
@@ -276,7 +278,7 @@ def apiLeave():
         ride_id = rides_dict['rideId']
         userId = get_jwt_identity()
         currentRide = Ride.query.filter(Ride.id == ride_id).first_or_404()
-        currentRideUser = RideUser.query.filter_by(ride_id=ride_id, user_id = userId).first_or_404()
+        currentRideUser = RideUser.query.filter_by(ride_id=ride_id, user_id = userId, isDeleted = False).first_or_404()
         if currentRideUser:
             currentRideUser.isDeleted = True
             currentRide.seatsRemaining = currentRide.seatsRemaining + 1
