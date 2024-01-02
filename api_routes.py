@@ -147,76 +147,98 @@ def apiridesQuery():
                 Ride.rideDate == ride_date,
                 Ride.isDeleted == False
             ).order_by(Ride.rideTime).all()
+           
+            # Initialize an empty list to store the updated ride information
+            updated_rides = []
 
+            for ride in rides_list:
+                fromLocationId, toLocationId = ride[2], ride[3]
 
-            rides_list_as_dicts = [
-                {
-                    "rideId": record[0],
-                    "seatsRemaining": record[1],
-                    "fromLocationId": record[2],
-                    "toLocationId": record[3],
-                    "rideDate": record[4].strftime('%Y-%m-%d'),  # Convert date to string
-                    "rideTime": record[5].strftime('%H:%M'),    # Convert time to string
+                fromLocation = db.session.query(Location.location_name).filter(Location.id == fromLocationId).first()
+                toLocation = db.session.query(Location.location_name).filter(Location.id == toLocationId).first()
+
+                fromLocationName = fromLocation[0] if fromLocation else None
+                toLocationName = toLocation[0] if toLocation else None
+
+                ride_info = {
+                    "ride_id": ride[0],
+                    "seatsRemaining": ride[1],
+                    "fromLocationId": fromLocationId,
+                    "toLocationId": toLocationId,
+                    "rideDate": ride[4].strftime('%Y-%m-%d'),
+                    "rideTime": ride[5].strftime('%H:%M'),
+                    "fromLocationName": fromLocationName,
+                    "toLocationName": toLocationName
                 }
-                for record in rides_list
-            ]
+                updated_rides.append(ride_info)
                
-            return jsonify(rides=rides_list_as_dicts)
+            return jsonify(updated_rides)
         except Exception as e:
             return jsonify({"error": str(e)})
-
 
 @api_route.route("/myRideSearch", methods=["GET"])
 @jwt_required()
 def apiMyRidesQuery():
-        try:
-            print('myRideSearch')
-            print('JWT', get_jwt_identity())
-            userId = get_jwt_identity()
-            print('userId', userId)
-            # Query to get list of ride IDs
-            ride_ids_subquery = db.session.query(RideUser.ride_id).filter(
-                RideUser.user_id == userId,
-                RideUser.isDeleted == False
-            ).subquery()
-            print('ride_ids', ride_ids_subquery)
-            # Query Ride model using ride IDs
-            rides = db.session.query(
-                Ride.id,
-                Ride.seatsRemaining,
-                Ride.fromLocationId,
-                Ride.toLocationId,
-                Ride.rideDate,
-                Ride.rideTime
-            ).filter(
-                Ride.id.in_(ride_ids_subquery),
-                Ride.isDeleted == False
-            ).order_by(Ride.rideTime).all()
+    try:
+        print('myRideSearch')
+        userId = get_jwt_identity()
+        print('userId', userId)
 
-            print('rides', rides)
+        # Query to get list of ride IDs
+        ride_ids_subquery = db.session.query(RideUser.ride_id).filter(
+            RideUser.user_id == userId,
+            RideUser.isDeleted == False
+        ).subquery()
 
-            # Format the results as a list of dicts or similar, depending on your requirement
-            rides_list = [
-                {
-                    "ride_id": ride[0],
-                    "seatsRemaining": ride[1],
-                    "fromLocationId": ride[2],
-                    "toLocationId": ride[3],
-                    "rideDate": ride[4].strftime('%Y-%m-%d'),
-                    "rideTime": ride[5].strftime('%H:%M')
-                } for ride in rides
-            ]
+        # Query Ride model using ride IDs
+        rides = db.session.query(
+            Ride.id,
+            Ride.seatsRemaining,
+            Ride.fromLocationId,
+            Ride.toLocationId,
+            Ride.rideDate,
+            Ride.rideTime
+        ).filter(
+            Ride.id.in_(ride_ids_subquery),
+            Ride.isDeleted == False
+        ).order_by(Ride.rideTime).all()
 
-            return jsonify(rides_list)
+        # Initialize an empty list to store the updated ride information
+        updated_rides = []
 
-        except Exception as e:
-            return jsonify({"error": str(e)})
+        for ride in rides:
+            fromLocationId, toLocationId = ride[2], ride[3]
+
+            fromLocation = db.session.query(Location.location_name).filter(Location.id == fromLocationId).first()
+            toLocation = db.session.query(Location.location_name).filter(Location.id == toLocationId).first()
+
+            fromLocationName = fromLocation[0] if fromLocation else None
+            toLocationName = toLocation[0] if toLocation else None
+
+            ride_info = {
+                "ride_id": ride[0],
+                "seatsRemaining": ride[1],
+                "fromLocationId": fromLocationId,
+                "toLocationId": toLocationId,
+                "rideDate": ride[4].strftime('%Y-%m-%d'),
+                "rideTime": ride[5].strftime('%H:%M'),
+                "fromLocationName": fromLocationName,
+                "toLocationName": toLocationName
+            }
+
+            updated_rides.append(ride_info)
+
+        return jsonify(updated_rides)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500  # Adding a status code for the error response
 
 @api_route.route("/locations", methods=["GET"])
 @jwt_required()
 def get_locations():
     try:
-        college_id = 1
+        userId = get_jwt_identity()
+        user = User.query.filter(User.id == userId).first()
+        college_id = user.college_id if user else None
 
         query = Location.query.filter(Location.college_id == college_id).all()
 
@@ -252,7 +274,7 @@ def apiJoin():
         ).first()
 
         if existing_ride_user:
-            error_message = "You have already joined this ride group, please leave before joining a new one."
+            error_message = "You have already joined this ride group."
             return jsonify({"error": error_message})
 
         if currentRide.seatsRemaining > 0:
@@ -298,31 +320,45 @@ def apiLeave():
 @api_route.route("/rideDetails", methods=["GET"])
 @jwt_required()
 def apirideDetails():
-     try:
+    try:
         rideId = request.args.get("rideId")
         rideDetails_list = db.session.query(User.name, User.telNumber, Ride.fromLocationId, Ride.toLocationId, Ride.rideDate, Ride.rideTime, Ride.seatsRemaining).filter(
-             Ride.id == RideUser.ride_id,
-             RideUser.user_id == User.id,
-             Ride.id == rideId,
-             Ride.isDeleted == False,
-             RideUser.isDeleted == False
-         )
-        rideDetails_list_as_dicts = [
-            {
-                "name": record[0],
-                "telNumber": record[1],
-                "fromLocationId": record[2],
-                "toLocationId": record[3],
-                "rideDate": record[4].strftime('%Y-%m-%d'),  # Convert date to string
-                "rideTime": record[5].strftime('%H:%M'),    # Convert time to string
-                "seatsRemaining": record[6]
-            }
-        for record in rideDetails_list
-        ]
-        return jsonify(rides=rideDetails_list_as_dicts)
-     except Exception as e:
-        return jsonify({"error": str(e)})
+            Ride.id == RideUser.ride_id,
+            RideUser.user_id == User.id,
+            Ride.id == rideId,
+            Ride.isDeleted == False,
+            RideUser.isDeleted == False
+        ).order_by(RideUser.isHost.desc()).all()  # Descending order to get hosts first
 
+        # Initialize an empty list to store the updated ride information
+        updated_rides = []
+
+        for ride in rideDetails_list:
+            fromLocationId, toLocationId = ride[2], ride[3]
+
+            fromLocation = db.session.query(Location.location_name).filter(Location.id == fromLocationId).first()
+            toLocation = db.session.query(Location.location_name).filter(Location.id == toLocationId).first()
+
+            fromLocationName = fromLocation[0] if fromLocation else None
+            toLocationName = toLocation[0] if toLocation else None
+
+            ride_info = {
+                "name": ride[0],
+                "telNumber": ride[1],
+                "fromLocationId": fromLocationId,
+                "toLocationId": toLocationId,
+                "rideDate": ride[4].strftime('%Y-%m-%d'),
+                "rideTime": ride[5].strftime('%H:%M'),
+                "seatsRemaining": ride[6],
+                "fromLocationName": fromLocationName,
+                "toLocationName": toLocationName
+            }
+
+            updated_rides.append(ride_info)
+
+        return jsonify(rides=updated_rides)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 @api_route.route("/login", methods=["GET", "POST"])
 def apilogin():
