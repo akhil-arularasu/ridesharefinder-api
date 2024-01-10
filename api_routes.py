@@ -28,16 +28,22 @@ from flask import Flask, jsonify, request
 from marshmallow import Schema, fields, ValidationError, validate, validates
 from flask import Flask, jsonify, request, Blueprint, render_template, abort, current_app
 from extension import send_json_email, RegisterSchema
-
+import re
 
 api_route = Blueprint('api_route',__name__)
 
+@api_route.route("/colleges", methods=["GET"])
+def get_colleges():
+    try:
+        colleges = College.query.all()
+        colleges_data = [{"id": college.id, "name": college.college_name} for college in colleges]
+        return jsonify(colleges_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @api_route.route("/register", methods=["GET", "POST"])
 def apiregister():
         users_dict = request.json
-
-
         schema = RegisterSchema()
         try:
             # Validate request body against schema data types
@@ -61,6 +67,10 @@ def apiregister():
         if password != repeat_password:
             return jsonify({'error': 'Passwords do not match'}), 400
 
+        # Check if college_id and email pattern match
+        college = College.query.get(college_id)
+        if not college or not re.match(college.email_pattern, email):
+            return jsonify({'error': ' Email does not match institution @edu email pattern'}), 400
 
         user = User(name=name, email=email, password=current_app.config['bcrypt'].generate_password_hash(password).decode('utf-8'), college_id = college_id, telNumber=telNumber, is_confirmed=False)
         db.session.add(user)
@@ -71,12 +81,11 @@ def apiregister():
         confirm_url = url_for('confirm_email', token=token, _external=True)
 
 
-           # Create a JSON email template
+        # Create a JSON email template
         json_email_template = {
         "subject": "Please confirm your email",
         "message": f"Please click the link below to confirm your email address: {confirm_url}",
     }
-
 
         # Send the JSON email
         if send_json_email(email, json_email_template):
@@ -383,6 +392,45 @@ def apilogin():
             # Invalid email or password
             return jsonify({'error': 'Invalid email and/or password'})
 
+@api_route.route("/userAccount", methods=["GET"])
+@jwt_required()
+def api_account_get():
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if user:
+            college_name = user.college.college_name if user.college else None
+            user_data = {
+                "name": user.name,
+                "telNumber": user.telNumber,
+                "collegeId": user.college_id,
+                "collegeName": college_name  # Include the college name in the response
+            }
+            return jsonify(user_data)
+        else:
+            return jsonify({"error": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+@api_route.route("/campuses", methods=["GET"])
+@jwt_required()
+def api_campuses():
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user or not user.college:
+            return jsonify({"error": "User or User's College not found"}), 404
+        
+        email_pattern = user.college.email_pattern
+        similar_colleges = College.query.filter_by(email_pattern=email_pattern).all()
+
+        campuses = [{"id": college.id, "name": college.college_name} for college in similar_colleges]
+        
+        return jsonify(campuses)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @api_route.route("/account", methods=["PUT"])
 @jwt_required()
@@ -415,9 +463,10 @@ def api_account_update():
         return jsonify({"error": str(e)})
 
 
-@api_route.route("/logout")
+@api_route.route("/logout", methods=["GET"])
+@jwt_required()
 def apilogout():
-    if not current_user.is_authenticated:
-        return jsonify({'error': 'User not logged in'}), 401  # Unauthorized status
+    session.clear()
+    print('sesion cleared')
     logout_user()
     return jsonify({'message': 'You have been logged out.'})

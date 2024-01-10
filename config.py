@@ -1,6 +1,7 @@
 """Flask App configuration."""
 from os import environ, path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 # Specificy a `.env` file containing key/value config values
 basedir = path.abspath(path.dirname(__file__))
@@ -31,6 +32,7 @@ class Config:
     LOGIN_MANAGER_LOGIN_MESSAGE_CATEGORY = 'danger'
     SESSION_TYPE = 'filesystem'  # You can choose another session type if needed
     JWT_SECRET_KEY = 'mykey'  # Replace with a strong secret key
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)  # Token expires in 7 days
 
 
     SECURITY_PASSWORD_SALT = 'my_precious_two'

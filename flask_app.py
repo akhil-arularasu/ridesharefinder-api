@@ -32,24 +32,20 @@ from flask_cors import CORS, cross_origin
 import os
 
 app = Flask(__name__)
-app.config.from_object('config.Config')
+app.config.from_object('config.Config')  # Load configuration from config.py
 
 mail = Mail(app)
 #if (app.config ['ENVIRONMENT'] == 'dev'):
 #    print('Development env. NO CORS')
 #else:
-
-CORS(app, supports_credentials=True, expose_headers=['Authorization'])
 app.config['CORS_HEADERS'] = 'Content-Type'
+CORS(app, supports_credentials=True, expose_headers=['Authorization'])
 
 app.permanent_session_lifetime = timedelta(days=30)
 print(app.config ['SQLALCHEMY_DATABASE_URI'])
 if (app.config ['ENVIRONMENT'] == 'dev'):
      print('Development Environment')
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# gmail authentication
-
 
 jwt = JWTManager(app)
 
@@ -138,7 +134,6 @@ def send_json_email(to_email, json_content):
     except Exception as e:
         print(f"Email sending failed: {str(e)}")
         return False
-
 
 @app.route('/confirm/<token>')
 def confirm_email(token):
