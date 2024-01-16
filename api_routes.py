@@ -95,10 +95,16 @@ def apiregister():
         if password != repeat_password:
             return jsonify({'error': 'Passwords do not match'}), 400
 
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return jsonify({'error': 'An account with this email already exists'}), 400
+
         # Check if college_id and email pattern match
         college = College.query.get(college_id)
-        if not college or not re.match(college.email_pattern, email):
-            return jsonify({'error': ' Email does not match institution @edu email pattern'}), 400
+        print('college email pattern', college.email_pattern)
+        email_pattern = r'.*' + re.escape(college.email_pattern) + r'$'
+        if not college or not re.match(email_pattern, email):
+            return jsonify({'error': 'Email does not match institution @edu email pattern'}), 400
 
         user = User(name=name, email=email, password=current_app.config['bcrypt'].generate_password_hash(password).decode('utf-8'), college_id = college_id, telNumber=telNumber, is_confirmed=False)
         db.session.add(user)
