@@ -24,13 +24,41 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, creat
 from flask_swagger_ui import get_swaggerui_blueprint
 from sqlalchemy import func
 import jwt
-from flask import Flask, jsonify, request
 from marshmallow import Schema, fields, ValidationError, validate, validates
 from flask import Flask, jsonify, request, Blueprint, render_template, abort, current_app
-from extension import send_json_email, RegisterSchema
+from extension import send_json_email, RegisterSchema, send_reset_email
 import re
 
 api_route = Blueprint('api_route',__name__)
+
+@api_route.route("/reset_password", methods=["GET", "POST"])
+def api_reset_request():
+    if request.method == "POST":
+        data = request.get_json()
+        user = User.query.filter_by(email=data['email']).first()
+        if not user:
+            return jsonify({'message': 'Invalid email, please try again or register if you are a new user.', 'status': 'danger'}), 400
+        else:
+            send_reset_email(user)
+            return jsonify({'message': 'An email has been sent with instructions to reset your password.', 'status': 'info'}), 200
+    return jsonify({'message': 'Method not allowed', 'status': 'error'}), 405
+
+@api_route.route("/reset_password/<token>", methods=["GET", "POST"])
+def api_reset_password(token):
+    try:
+        email = confirm_token(token, current_app)
+        print('email', email)
+    except:
+        return jsonify({'message': 'The confirmation link is invalid or has expired.', 'status': 'danger'}), 400
+    user = User.query.filter_by(email=email).first_or_404()
+    if request.method == "POST":
+        data = request.get_json()
+        hashed_password = current_app.config['bcrypt'].generate_password_hash(data['password']).decode('utf-8')
+        user.password = hashed_password
+        db.session.commit()
+        return jsonify({'message': 'Your password has been changed! You should now be able to log in.', 'status': 'success'}), 200
+    return jsonify({'message': 'Method not allowed', 'status': 'error'}), 405
+
 
 @api_route.route("/colleges", methods=["GET"])
 def get_colleges():
