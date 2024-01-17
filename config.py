@@ -17,6 +17,7 @@ class Config:
     FLASK_DEBUG = environ.get("FLASK_DEBUG")
     SECRET_KEY = "hello"
     PORT = environ.get("PORT")
+    REACT_SERVER = environ.get("REACT_SERVER")
 
     # mail authentication
     MAIL_USERNAME = "ridesharefinder@gmail.com"

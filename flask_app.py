@@ -135,23 +135,23 @@ def send_json_email(to_email, json_content):
         print(f"Email sending failed: {str(e)}")
         return False
 
-@app.route('/confirm/<token>')
+@app.route(('/confirm/<token>'))
 def confirm_email(token):
     try:
-        email = confirm_token(token,app)
+        email = confirm_token(token, app)
     except:
-        flash('The confirmation link is invalid or has expired.', 'danger')
-        return redirect('http://localhost:3000/login')
+        link = app.config['REACT_SERVER']
+        return redirect(link + '/login')
     user = User.query.filter_by(email=email).first_or_404()
-    if user.is_confirmed:
-        flash('Account already confirmed. Please login.', 'success')
-    else:
+    if not user.is_confirmed:
         user.is_confirmed = True
- #       user.updateTS = datetime.datetime.now()
+ #      user.updateTS = datetime.datetime.now()
         db.session.add(user)
         db.session.commit()
-        flash('You have confirmed your account. Thanks!', 'success')
-    return redirect('http://localhost:3000/login')
+    link = app.config['REACT_SERVER']
+    return redirect(link + '/login')
+
+
 
 def save(text, filepath='suggestions.txt'):
     with open("suggestions.txt", "a") as f:

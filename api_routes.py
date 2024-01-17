@@ -47,7 +47,6 @@ def api_reset_request():
 def api_reset_password(token):
     try:
         email = confirm_token(token, current_app)
-        print('email', email)
     except:
         return jsonify({'message': 'The confirmation link is invalid or has expired.', 'status': 'danger'}), 400
     user = User.query.filter_by(email=email).first_or_404()
@@ -101,7 +100,6 @@ def apiregister():
 
         # Check if college_id and email pattern match
         college = College.query.get(college_id)
-        print('college email pattern', college.email_pattern)
         email_pattern = r'.*' + re.escape(college.email_pattern) + r'$'
         if not college or not re.match(email_pattern, email):
             return jsonify({'error': 'Email does not match institution @edu email pattern'}), 400
@@ -117,9 +115,9 @@ def apiregister():
 
         # Create a JSON email template
         json_email_template = {
-        "subject": "Please confirm your email",
-        "message": f"Please click the link below to confirm your email address: {confirm_url}",
-    }
+            "subject": "Please confirm your email",
+            "message": f"Please click the link below to confirm your email address:\n{confirm_url}",
+        }
 
         # Send the JSON email
         if send_json_email(email, json_email_template):
@@ -133,7 +131,6 @@ def apiregister():
 def apicreate():
         try:
             rides_dict = request.json
-            print("Received data:", rides_dict)  
             userId = get_jwt_identity()
             seatsRemaining = rides_dict['seatsRemaining']
             rideDate = rides_dict['rideDate']
@@ -495,7 +492,6 @@ def api_account_update():
             return jsonify({"error": "User not found"})
     except Exception as e:
         return jsonify({"error": str(e)})
-
 
 @api_route.route("/logout", methods=["GET"])
 @jwt_required()
