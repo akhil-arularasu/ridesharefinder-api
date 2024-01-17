@@ -27,7 +27,7 @@ def send_json_email(to_email, json_content):
 def send_reset_email(user):
         mail = init_mail()
         token = generate_confirmation_token(user.email, current_app)
-        link = current_app.config['REACT_SERVER']
+        link = current_app.config['REACT_SERVER'].rstrip('/')  # Remove any trailing slash
         reset_url = link + f"/reset_password/{token}"  # Update this URL
         print('reset  url', reset_url)
         msg = Message('Password Reset Request', sender=current_app.config['MAIL_USERNAME'], recipients=[user.email])
