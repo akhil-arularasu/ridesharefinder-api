@@ -140,16 +140,16 @@ def confirm_email(token):
     try:
         email = confirm_token(token, app)
     except:
-        link = app.config['REACT_SERVER']
-        return redirect(link + '/login')
+        link = app.config['REACT_SERVER'].rstrip('/')  # Remove any trailing slash
+        return redirect(link + '/Login')
     user = User.query.filter_by(email=email).first_or_404()
     if not user.is_confirmed:
         user.is_confirmed = True
  #      user.updateTS = datetime.datetime.now()
         db.session.add(user)
         db.session.commit()
-    link = app.config['REACT_SERVER']
-    return redirect(link + '/login')
+        link = app.config['REACT_SERVER'].rstrip('/')  # Remove any trailing slash
+    return redirect(link + '/Login')
 
 
 
