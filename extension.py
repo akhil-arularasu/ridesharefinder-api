@@ -31,9 +31,15 @@ def send_reset_email(user):
         reset_url = link + f"/reset_password/{token}"  # Update this URL
         print('reset  url', reset_url)
         msg = Message('Password Reset Request', sender=current_app.config['MAIL_USERNAME'], recipients=[user.email])
-        msg.body = f"""To reset your password follow this link: {reset_url}
-If you did not make this request, ignore this email no changes will be made
+        msg.body = f"""
+        <html>
+            <body>
+                <p>To reset your password, follow this link: <a href='{reset_url}'>Reset RideShareFinder Password</a></p>
+                <p>If you did not make this request, ignore this email and no changes will be made.</p>
+            </body>
+        </html>
         """
+        msg.html = msg.body  # Set the HTML content of the email
         mail.send(msg)
 
 def my_func(json_str:str):

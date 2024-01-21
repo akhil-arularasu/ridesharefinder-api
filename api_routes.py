@@ -116,8 +116,9 @@ def apiregister():
         # Create a JSON email template
         json_email_template = {
             "subject": "Please confirm your email",
-            "message": f"Please click the link below to confirm your email address:\n{confirm_url}",
+            "message": f"Please click the link below to confirm your account and login:<br><a href='{confirm_url}'>Activate RideShareFinder Acccount</a>",
         }
+
 
         # Send the JSON email
         if send_json_email(email, json_email_template):
