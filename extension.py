@@ -5,6 +5,7 @@ from flask import Flask, flash, redirect, url_for, render_template, request, ses
 from json import dumps, loads
 from marshmallow import Schema, fields, ValidationError, validate, validates
 import json, phonenumbers
+from twilio.rest import Client
 
 
 def init_mail():
@@ -41,6 +42,18 @@ def send_reset_email(user):
         """
         msg.html = msg.body  # Set the HTML content of the email
         mail.send(msg)
+
+def send_sms(to_phone_number,message):
+ 
+    to_number = to_phone_number
+    if (current_app.config['ENVIRONMENT'] == 'dev'):
+        to_number = '9733962740'
+    client = Client(current_app.config['TWILIO_ACCOUNT_SID'], current_app.config['TWILIO_AUTH_TOKEN'])
+    message = client.messages.create(
+    from_=current_app.config['TWILIO_FROM_PHONE'],
+    body=message,
+    to=to_number
+    )
 
 def my_func(json_str:str):
     """ Your Function that Requires JSON string"""

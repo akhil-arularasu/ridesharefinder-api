@@ -26,7 +26,7 @@ from sqlalchemy import func
 import jwt
 from marshmallow import Schema, fields, ValidationError, validate, validates
 from flask import Flask, jsonify, request, Blueprint, render_template, abort, current_app
-from extension import send_json_email, RegisterSchema, send_reset_email
+from extension import send_json_email, RegisterSchema, send_reset_email, send_sms
 import re
 
 api_route = Blueprint('api_route',__name__)
@@ -326,6 +326,20 @@ def apiJoin():
             db.session.add(new_ride_user)
             db.session.add(currentRide)  # Add currentRide to the session to update it
             db.session.commit()
+
+            # Send SMS to all users in the ride group except the new user
+            ride_users = RideUser.query.filter(
+                RideUser.ride_id == ride_id, 
+                RideUser.user_id != userId, 
+                RideUser.isDeleted == False
+            ).all()
+
+            for ride_user in ride_users:
+                user_to_notify = User.query.get(ride_user.user_id)
+                if user_to_notify:
+                    message_txt = "A new user has joined your ride group."
+                    send_sms(user_to_notify.telNumber, message_txt)
+
             return jsonify({"message": "Joined Ride Group!"})
         else:
             return jsonify({"error": "No seats available in this ride group."})
@@ -353,6 +367,20 @@ def apiLeave():
                 currentRide.isDeleted = True
         db.session.add(currentRide)
         db.session.commit()
+
+        # Notify other users in the ride group
+        other_users_in_ride = RideUser.query.filter(
+            RideUser.ride_id == ride_id, 
+            RideUser.user_id != userId, 
+            RideUser.isDeleted == False
+        ).all()
+
+        message_txt = "A user has left your ride group."
+        for user in other_users_in_ride:
+            user_to_notify = User.query.get(user.user_id)
+            if user_to_notify:
+                send_sms(user_to_notify.telNumber, message_txt)
+
         print('left')
         return jsonify({"message": "Left Ride Group."})
     except Exception as e:

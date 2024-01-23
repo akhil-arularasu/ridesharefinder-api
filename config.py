@@ -21,7 +21,7 @@ class Config:
 
     # mail authentication
     MAIL_USERNAME = "ridesharefinder@gmail.com"
-    MAIL_PASSWORD = "zzplvgkjffoxbhvk"
+    environ.get("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = "ridesharefinder@gmail.com"
 
     # Database 
@@ -32,15 +32,18 @@ class Config:
     LOGIN_MANAGER_LOGIN_VIEW = 'login'
     LOGIN_MANAGER_LOGIN_MESSAGE_CATEGORY = 'danger'
     SESSION_TYPE = 'filesystem'  # You can choose another session type if needed
-    JWT_SECRET_KEY = 'mykey'  # Replace with a strong secret key
+    JWT_SECRET_KEY = environ.get('JWT_SECRET_KEY')  # Replace with a strong secret key
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)  # Token expires in 7 days
 
-
-    SECURITY_PASSWORD_SALT = 'my_precious_two'
+    SECURITY_PASSWORD_SALT = environ.get('SECURITY_PASSWORD_SALT')
     MAIL_SERVER = "smtp.gmail.com"
     MAIL_PORT = 465
     MAIL_USE_TLS = False
     MAIL_USE_SSL = True
 
+# Twilio
+    TWILIO_ACCOUNT_SID  = environ.get("TWILIO_ACCOUNT_SID")
+    TWILIO_AUTH_TOKEN = environ.get("TWILIO_AUTO_TOKEN")
+    TWILIO_FROM_PHONE = environ.get("TWILIO_FROM_PHONE")
       
 #app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
