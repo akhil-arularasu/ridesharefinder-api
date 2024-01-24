@@ -21,7 +21,7 @@ class Config:
 
     # mail authentication
     MAIL_USERNAME = "ridesharefinder@gmail.com"
-    environ.get("MAIL_PASSWORD")
+    MAIL_PASSWORD = environ.get("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = "ridesharefinder@gmail.com"
 
     # Database 
