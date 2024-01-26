@@ -148,7 +148,7 @@ def confirm_email(token):
  #      user.updateTS = datetime.datetime.now()
         db.session.add(user)
         db.session.commit()
-        link = app.config['REACT_SERVER'].rstrip('/')  # Remove any trailing slash
+    link = app.config['REACT_SERVER'].rstrip('/')  # Remove any trailing slash
     return redirect(link + '/Login')
 
 
