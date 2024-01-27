@@ -100,9 +100,12 @@ def apiregister():
 
         # Check if college_id and email pattern match
         college = College.query.get(college_id)
-        email_pattern = r'.*' + re.escape(college.email_pattern) + r'$'
-        if not college or not re.match(email_pattern, email):
-            return jsonify({'error': 'Email does not match institution @edu email pattern'}), 400
+
+        # uncomment the following 3 lines soon
+        # email_pattern = r'.*' + re.escape(college.email_pattern) + r'$'
+        # if not college or not re.match(email_pattern, email):
+        #     return jsonify({'error': 'Email does not match institution @edu email pattern'}), 400
+
 
         user = User(name=name, email=email, password=current_app.config['bcrypt'].generate_password_hash(password).decode('utf-8'), college_id = college_id, telNumber=telNumber, is_confirmed=False)
         db.session.add(user)
@@ -485,7 +488,6 @@ def api_campuses():
         
         email_pattern = user.college.email_pattern
         similar_colleges = College.query.filter_by(email_pattern=email_pattern).all()
-
         campuses = [{"id": college.id, "name": college.college_name} for college in similar_colleges]
         
         return jsonify(campuses)
