@@ -84,7 +84,7 @@ def apiregister():
 
 
         name = users_dict['name']
-        email = users_dict['email']
+        email = users_dict['email'].lower()
         password = users_dict['password']
         repeat_password = users_dict['repeat_password']
         college_id = users_dict['college_id']
@@ -151,7 +151,8 @@ def apicreate():
                 Ride.fromLocationId == from_location_id,
                 Ride.toLocationId == to_location_id,
                 Ride.rideDate == rideDate,
-                Ride.isDeleted == False
+                Ride.isDeleted == False,
+                RideUser.isDeleted == False
             ).all()
             print('db record', dbRecord)
             if (dbRecord):
@@ -340,7 +341,7 @@ def apiJoin():
             for ride_user in ride_users:
                 user_to_notify = User.query.get(ride_user.user_id)
                 if user_to_notify:
-                    message_txt = "A new user has joined your ride group."
+                    message_txt = "A new user has joined your ride group. \n www.ridesharefinder.net"
                     send_sms(user_to_notify.telNumber, message_txt)
 
             return jsonify({"message": "Joined Ride Group!"})
@@ -437,7 +438,7 @@ def apilogin():
         users_dict = request.json
         print("Received data:", users_dict)  
 
-        email = users_dict['email']
+        email = users_dict['email'].lower()
         password = users_dict['password']
 
         user = User.query.filter_by(email=email).first()
