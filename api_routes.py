@@ -119,7 +119,7 @@ def apiregister():
         # Create a JSON email template
         json_email_template = {
             "subject": "Please confirm your email",
-            "message": f"Please click the link below to confirm your account and login:<br><a href='{confirm_url}'>Activate RideShareFinder Acccount</a>",
+            "message": f"Please click the link below to confirm your account and login:<br><a href='{confirm_url}'>Activate TrypSync Acccount</a>",
         }
 
 
@@ -341,7 +341,7 @@ def apiJoin():
             for ride_user in ride_users:
                 user_to_notify = User.query.get(ride_user.user_id)
                 if user_to_notify:
-                    message_txt = "A new user has joined your ride group. \n www.ridesharefinder.net"
+                    message_txt = "A new user has joined your ride group. \n www.trypsync.com"
                     send_sms(user_to_notify.telNumber, message_txt)
 
             return jsonify({"message": "Joined Ride Group!"})

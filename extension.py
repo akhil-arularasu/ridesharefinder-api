@@ -35,7 +35,7 @@ def send_reset_email(user):
         msg.body = f"""
         <html>
             <body>
-                <p>To reset your password, follow this link: <a href='{reset_url}'>Reset RideShareFinder Password</a></p>
+                <p>To reset your password, follow this link: <a href='{reset_url}'>Reset TrypSync Account Password</a></p>
                 <p>If you did not make this request, ignore this email and no changes will be made.</p>
             </body>
         </html>
