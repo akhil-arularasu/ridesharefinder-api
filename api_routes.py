@@ -494,6 +494,37 @@ def api_campuses():
         return jsonify(campuses)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@api_route.route("/updateSeats", methods=["POST", "GET"])
+@jwt_required()
+def api_updateSeats():
+    try:
+        rides_dict = request.json
+        newSeatsRemaining = rides_dict['seatsRemaining']
+        ride_id = rides_dict['rideId']
+        print(ride_id)
+        userId = get_jwt_identity()
+        if(newSeatsRemaining > 9 or newSeatsRemaining < 0):
+            return jsonify({"error": "Invalid Input"})
+        
+        # Check if the record already exists
+        rideToUpdate = db.session.query(Ride).join(RideUser).filter(
+            Ride.id == ride_id,
+            RideUser.ride_id == Ride.id,
+            RideUser.user_id == userId,
+            Ride.isDeleted == False,
+            RideUser.isDeleted == False,
+            RideUser.isHost == True
+        ).first()  # Use .first() to get a single object or None
+        print('db record', rideToUpdate)
+        if (rideToUpdate):
+            rideToUpdate.seatsRemaining = newSeatsRemaining
+            db.session.commit()
+            return jsonify({"message": "Ride Seats Updated!"})
+        else:
+            return jsonify({"error": "Ride not found"})
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 @api_route.route("/account", methods=["PUT"])
 @jwt_required()
