@@ -340,7 +340,7 @@ def apiJoin():
             for ride_user in ride_users:
                 user_to_notify = User.query.get(ride_user.user_id)
                 if user_to_notify:
-                    message_txt = "A new user has joined your ride group. \n www.trypsync.com"
+                    message_txt = "A new user has joined your ride group. \n www.trypsync.com \n Reply STOP to opt out of text messages."
                     send_sms(user_to_notify.telNumber, message_txt)
 
             return jsonify({"message": "Joined Ride Group!"})
@@ -378,7 +378,7 @@ def apiLeave():
             RideUser.isDeleted == False
         ).all()
 
-        message_txt = "A user has left your ride group."
+        message_txt = "A user has left your ride group. \n Reply STOP to opt out of text messages."
         for user in other_users_in_ride:
             user_to_notify = User.query.get(user.user_id)
             if user_to_notify:
