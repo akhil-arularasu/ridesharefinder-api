@@ -7,7 +7,6 @@ from marshmallow import Schema, fields, ValidationError, validate, validates
 import json, phonenumbers
 from twilio.rest import Client
 
-
 def init_mail():
     mail = Mail(current_app)
     return mail

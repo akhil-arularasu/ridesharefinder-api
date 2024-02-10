@@ -229,22 +229,20 @@ def apiMyRidesQuery():
         userId = get_jwt_identity()
         print('userId', userId)
 
-        # Query to get list of ride IDs
-        ride_ids_subquery = db.session.query(RideUser.ride_id).filter(
-            RideUser.user_id == userId,
-            RideUser.isDeleted == False
-        ).subquery()
-
-        # Query Ride model using ride IDs
+        # Join RideUser and Ride models to get ride details along with isHost flag
         rides = db.session.query(
             Ride.id,
             Ride.seatsRemaining,
             Ride.fromLocationId,
             Ride.toLocationId,
             Ride.rideDate,
-            Ride.rideTime
+            Ride.rideTime,
+            RideUser.isHost  # Fetch the isHost flag
+        ).join(
+            RideUser, Ride.id == RideUser.ride_id
         ).filter(
-            Ride.id.in_(ride_ids_subquery),
+            RideUser.user_id == userId,
+            RideUser.isDeleted == False,
             Ride.isDeleted == False
         ).order_by(Ride.rideTime).all()
 
@@ -268,7 +266,8 @@ def apiMyRidesQuery():
                 "rideDate": ride[4].strftime('%Y-%m-%d'),
                 "rideTime": ride[5].strftime('%H:%M'),
                 "fromLocationName": fromLocationName,
-                "toLocationName": toLocationName
+                "toLocationName": toLocationName,
+                "isHost": ride[6]  # Add the isHost flag to the response
             }
 
             updated_rides.append(ride_info)
