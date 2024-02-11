@@ -15,7 +15,7 @@ class Config:
     ENVIRONMENT = environ.get("ENVIRONMENT")
     FLASK_APP = environ.get("FLASK_APP")
     FLASK_DEBUG = environ.get("FLASK_DEBUG")
-    SECRET_KEY = environ.get("SECRET_KEY")
+    SECRET_KEY = 'hello'
     PORT = environ.get("PORT")
     REACT_SERVER = environ.get("REACT_SERVER")
 
