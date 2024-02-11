@@ -52,6 +52,7 @@ def api_reset_password(token):
     user = User.query.filter_by(email=email).first_or_404()
     if request.method == "POST":
         data = request.get_json()
+        print('data', data)
         hashed_password = current_app.config['bcrypt'].generate_password_hash(data['password']).decode('utf-8')
         user.password = hashed_password
         db.session.commit()
@@ -144,7 +145,9 @@ def apicreate():
 
 
             # Check if the record already exists
-            print("user:", userId)  
+            print("user:", userId)
+            print("rides_dict", rides_dict)
+
             dbRecord = db.session.query(Ride.id, RideUser.id).filter(
                 RideUser.ride_id == Ride.id,
                 RideUser.user_id == userId,

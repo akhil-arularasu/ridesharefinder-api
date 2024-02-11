@@ -15,7 +15,7 @@ class Config:
     ENVIRONMENT = environ.get("ENVIRONMENT")
     FLASK_APP = environ.get("FLASK_APP")
     FLASK_DEBUG = environ.get("FLASK_DEBUG")
-    SECRET_KEY = "hello"
+    SECRET_KEY = environ.get("SECRET_KEY")
     PORT = environ.get("PORT")
     REACT_SERVER = environ.get("REACT_SERVER")
 
@@ -35,7 +35,7 @@ class Config:
     JWT_SECRET_KEY = environ.get('JWT_SECRET_KEY')  # Replace with a strong secret key
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)  # Token expires in 7 days
 
-    SECURITY_PASSWORD_SALT = environ.get('SECURITY_PASSWORD_SALT')
+    SECURITY_PASSWORD_SALT = environ.get("SECURITY_PASSWORD_SALT")
     MAIL_SERVER = "smtp.gmail.com"
     MAIL_PORT = 465
     MAIL_USE_TLS = False
