@@ -25,8 +25,7 @@ class Config:
     MAIL_DEFAULT_SENDER = "ridesharefinder@gmail.com"
 
     # Database 
-    #SQLALCHEMY_DATABASE_URI = 'postgresql://oipmjphdmoruca:9a37269d62370bc00e05edf6fd1c40eba48fb464bbb527975541400c5b822fd2@ec2-3-230-24-12.compute-1.amazonaws.com:5432/dao53i37c8qfbs'
-    SQLALCHEMY_DATABASE_URI = environ.get('SQLALCHEMY_DATABASE_URI')
+    SQLALCHEMY_DATABASE_URI = environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     LOGIN_MANAGER_LOGIN_VIEW = 'login'
