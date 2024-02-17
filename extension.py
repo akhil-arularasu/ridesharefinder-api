@@ -1,10 +1,9 @@
 from flask import current_app
 from flask_mail import Mail, Message
-from token_creator import generate_confirmation_token, confirm_token
-from flask import Flask, flash, redirect, url_for, render_template, request, session, jsonify, Blueprint
-from json import dumps, loads
+from token_creator import generate_confirmation_token
+from json import loads
 from marshmallow import Schema, fields, ValidationError, validate, validates
-import json, phonenumbers
+import phonenumbers
 from twilio.rest import Client
 
 def init_mail():

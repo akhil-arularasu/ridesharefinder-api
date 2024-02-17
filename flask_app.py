@@ -1,34 +1,21 @@
 from flask import Flask, flash, redirect, url_for, render_template, request, session, jsonify, Blueprint
-from datetime import datetime, timedelta, time
-import cgi
-from flask_sqlalchemy import SQLAlchemy
+from datetime import timedelta, time
 from sqlalchemy import func
-import babel
 import dateutil
-from dateutil import parser
 from model import Ride, db, Ride_Archive, User, College, Location
-from socket import gethostname
 from flask_migrate import Migrate
-import requests
-import json, phonenumbers
-from flask_session import Session
-from decouple import config
+import json
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from token_creator import generate_confirmation_token, confirm_token
 from email_sender import send_email
 from flask_mail import Mail, Message
 #import uuid
-from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
+from flask_jwt_extended import JWTManager
 from flask_swagger_ui import get_swaggerui_blueprint
-from sqlalchemy import func
-import jwt
-from json import dumps, loads
-from flask import Flask, jsonify, request, redirect
-from marshmallow import Schema, fields, ValidationError, validate, validates
+from flask import Flask, redirect
 from api_routes import api_route
-from extension import init_mail, send_json_email, send_reset_email, RegisterSchema, my_func
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 import os
 
 app = Flask(__name__)

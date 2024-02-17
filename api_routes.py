@@ -1,33 +1,14 @@
 
-from flask import Flask, flash, redirect, url_for, render_template, request, session, jsonify, Blueprint
-from datetime import datetime, timedelta, time
-import cgi
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func
-import babel
-import dateutil
-from dateutil import parser
+from flask import url_for, request, session, jsonify, Blueprint
+from datetime import datetime
 from model import Ride, db, Ride_Archive, RideUser, User, College, Location
-from socket import gethostname
-from flask_migrate import Migrate
-import requests
-import json, phonenumbers
-from flask_session import Session
-from decouple import config
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager, login_user, logout_user, login_required
+from flask_login import login_user, logout_user
 from token_creator import generate_confirmation_token, confirm_token
-from email_sender import send_email
-from flask_mail import Mail, Message
 #import uuid
-from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
-from flask_swagger_ui import get_swaggerui_blueprint
-from sqlalchemy import func
-import jwt
-from marshmallow import Schema, fields, ValidationError, validate, validates
-from flask import Flask, jsonify, request, Blueprint, render_template, abort, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
+from marshmallow import ValidationError
+from flask import jsonify, request, Blueprint, current_app
 from extension import send_json_email, RegisterSchema, send_reset_email, send_sms
-import re
 
 api_route = Blueprint('api_route',__name__)
 
@@ -438,9 +419,10 @@ def apirideDetails():
 @api_route.route("/login", methods=["GET", "POST"])
 def apilogin():
         users_dict = request.json
-        print("Received data:", users_dict)  
+        print("Received data " )  
 
         email = users_dict['email'].lower()
+        print("email:", email )  
         password = users_dict['password']
 
         user = User.query.filter_by(email=email).first()
