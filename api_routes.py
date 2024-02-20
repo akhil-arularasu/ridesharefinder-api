@@ -9,6 +9,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_tok
 from marshmallow import ValidationError
 from flask import jsonify, request, Blueprint, current_app
 from extension import send_json_email, RegisterSchema, send_reset_email, send_sms
+import re
 
 api_route = Blueprint('api_route',__name__)
 
@@ -84,9 +85,9 @@ def apiregister():
         college = College.query.get(college_id)
 
         # uncomment the following 3 lines soon
-        # email_pattern = r'.*' + re.escape(college.email_pattern) + r'$'
-        # if not college or not re.match(email_pattern, email):
-        #     return jsonify({'error': 'Email does not match institution @edu email pattern'}), 400
+  #      email_pattern = r'.*' + re.escape(college.email_pattern) + r'$'
+  #      if not college or not re.match(email_pattern, email):
+  #          return jsonify({'error': 'Email does not match institution @edu email pattern'}), 400
 
 
         user = User(name=name, email=email, password=current_app.config['bcrypt'].generate_password_hash(password).decode('utf-8'), college_id = college_id, telNumber=telNumber, is_confirmed=False)
@@ -140,7 +141,7 @@ def apicreate():
             ).all()
             print('db record', dbRecord)
             if (dbRecord):
-                error_message = "Your ride information already exists in the system. Please Update"
+                error_message = "Looks like you already have a Tryp on the same date. Please leave that Tryp first before creating a new one."
                 return jsonify({"error": error_message})
             else:
                 new_ride = Ride(rideDate=rideDate, rideTime=rideTime, fromLocationId = from_location_id, toLocationId=to_location_id, seatsRemaining = seatsRemaining)
@@ -339,7 +340,7 @@ def apiJoin():
 def apiLeave():
     try:
         rides_dict = request.json
-        ride_id = rides_dict['rideId']
+        ride_id = rides_dict['ride_id']
         userId = get_jwt_identity()
         currentRide = Ride.query.filter(Ride.id == ride_id).first_or_404()
         currentRideUser = RideUser.query.filter_by(ride_id=ride_id, user_id = userId, isDeleted = False).first_or_404()
@@ -377,11 +378,11 @@ def apiLeave():
 @jwt_required()
 def apirideDetails():
     try:
-        rideId = request.args.get("rideId")
+        ride_id = request.args.get("ride_id")
         rideDetails_list = db.session.query(User.name, User.telNumber, Ride.fromLocationId, Ride.toLocationId, Ride.rideDate, Ride.rideTime, Ride.seatsRemaining).filter(
             Ride.id == RideUser.ride_id,
             RideUser.user_id == User.id,
-            Ride.id == rideId,
+            Ride.id == ride_id,
             Ride.isDeleted == False,
             RideUser.isDeleted == False
         ).order_by(RideUser.isHost.desc()).all()  # Descending order to get hosts first
@@ -485,7 +486,7 @@ def api_updateSeats():
     try:
         rides_dict = request.json
         newSeatsRemaining = rides_dict['seatsRemaining']
-        ride_id = rides_dict['rideId']
+        ride_id = rides_dict['ride_id']
         print(ride_id)
         userId = get_jwt_identity()
         if(newSeatsRemaining > 9 or newSeatsRemaining < 0):
