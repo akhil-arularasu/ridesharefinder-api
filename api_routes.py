@@ -108,7 +108,7 @@ def apiregister():
 
         # Send the JSON email
         if send_json_email(email, json_email_template):
-            return jsonify({'message': ' A confirmation email has been sent. If you do not see the email, please be sure to check your Junk Mail inbox.'})
+            return jsonify({'message': ' A confirmation email has been sent. If you do not see the email, be sure to check your Junk Mail inbox!'})
         else:
             return jsonify({'error': 'Invalid Data'}), 500
 
