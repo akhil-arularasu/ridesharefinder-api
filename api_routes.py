@@ -141,6 +141,7 @@ def apicreate():
             ).all()
             print('db record', dbRecord)
             if (dbRecord):
+                print('issue')
                 error_message = "Looks like you already have a Tryp on the same date. Please leave that Tryp first before creating a new one."
                 return jsonify({"error": error_message})
             else:
@@ -291,10 +292,25 @@ def apiJoin():
         rides_dict = request.json
         ride_id = rides_dict['ride_id']
         userId = get_jwt_identity()
-        
+
         # Retrieve the ride record
         currentRide = Ride.query.filter_by(id=ride_id).first_or_404()
         
+        # see users Tryps that day and time
+        dbRecord = db.session.query(Ride.id, RideUser.id).filter(
+            RideUser.ride_id == Ride.id,
+            RideUser.user_id == userId,
+            Ride.fromLocationId == currentRide.fromLocationId,
+            Ride.toLocationId == currentRide.toLocationId,
+            Ride.rideDate == currentRide.rideDate,
+            Ride.isDeleted == False,
+            RideUser.isDeleted == False
+        ).all()
+        print('db record', dbRecord)
+        if (dbRecord):
+            error_message = "Looks like you are already in a Tryp on the same date. Please leave that Tryp first before joining a new one."
+            return jsonify({"error": error_message})
+
         # Check if the user is already in a ride group
         existing_ride_user = RideUser.query.filter_by(
             ride_id=ride_id,
