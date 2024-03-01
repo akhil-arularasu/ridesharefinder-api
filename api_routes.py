@@ -34,7 +34,6 @@ def api_reset_password(token):
     user = User.query.filter_by(email=email).first_or_404()
     if request.method == "POST":
         data = request.get_json()
-        print('data', data)
         hashed_password = current_app.config['bcrypt'].generate_password_hash(data['password']).decode('utf-8')
         user.password = hashed_password
         db.session.commit()
