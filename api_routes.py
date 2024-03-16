@@ -1,6 +1,6 @@
 
 from flask import url_for, request, session, jsonify, Blueprint
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from model import Ride, db, Ride_Archive, RideUser, User, College, Location
 from flask_login import login_user, logout_user
 from token_creator import generate_confirmation_token, confirm_token
@@ -36,6 +36,7 @@ def api_reset_password(token):
         data = request.get_json()
         hashed_password = current_app.config['bcrypt'].generate_password_hash(data['password']).decode('utf-8')
         user.password = hashed_password
+        user.is_confirmed = True
         db.session.commit()
         return jsonify({'message': 'Your password has been changed! You should now be able to log in.', 'status': 'success'}), 200
     return jsonify({'message': 'Method not allowed', 'status': 'error'}), 405
@@ -228,7 +229,8 @@ def apiMyRidesQuery():
         ).filter(
             RideUser.user_id == userId,
             RideUser.isDeleted == False,
-            Ride.isDeleted == False
+            Ride.isDeleted == False,
+            Ride.rideDate >= date.today() - timedelta(days=2)
         ).order_by(Ride.rideTime).all()
 
         # Initialize an empty list to store the updated ride information
