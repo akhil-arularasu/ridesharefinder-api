@@ -85,9 +85,9 @@ def apiregister():
         college = College.query.get(college_id)
 
         # uncomment the following 3 lines soon
-  #      email_pattern = r'.*' + re.escape(college.email_pattern) + r'$'
-  #      if not college or not re.match(email_pattern, email):
-  #          return jsonify({'error': 'Email does not match institution @edu email pattern'}), 400
+        email_pattern = r'.*' + re.escape(college.email_pattern) + r'$'
+        if not college or not re.match(email_pattern, email):
+            return jsonify({'error': 'Email does not match institution @edu email pattern'}), 400
 
 
         user = User(name=name, email=email, password=current_app.config['bcrypt'].generate_password_hash(password).decode('utf-8'), college_id = college_id, telNumber=telNumber, is_confirmed=False)
