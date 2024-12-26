@@ -10,6 +10,7 @@ from marshmallow import ValidationError
 from flask import jsonify, request, Blueprint, current_app
 from extension import send_json_email, RegisterSchema, send_reset_email, send_sms
 import re
+from math import radians, cos, sin, asin, sqrt
 
 api_route = Blueprint('api_route',__name__)
 
@@ -122,9 +123,12 @@ def apicreate():
             seatsRemaining = rides_dict['seatsRemaining']
             rideDate = rides_dict['rideDate']
             rideTime = datetime.strptime(rides_dict['rideTime'], '%H:%M').time()
-            from_location_id = rides_dict['fromLocationId']
-            to_location_id = rides_dict['toLocationId']
-
+            startLocationName = rides_dict['startLocationName']            
+            startLatitude = rides_dict['startLatitude']            
+            startLongitude = rides_dict['startLongitude']            
+            endLocationName = rides_dict['endLocationName']            
+            endLatitude = rides_dict['endLatitude']            
+            endLongitude = rides_dict['endLongitude']            
 
             # Check if the record already exists
             print("user:", userId)
@@ -133,8 +137,6 @@ def apicreate():
             dbRecord = db.session.query(Ride.id, RideUser.id).filter(
                 RideUser.ride_id == Ride.id,
                 RideUser.user_id == userId,
-                Ride.fromLocationId == from_location_id,
-                Ride.toLocationId == to_location_id,
                 Ride.rideDate == rideDate,
                 Ride.isDeleted == False,
                 RideUser.isDeleted == False
@@ -145,7 +147,7 @@ def apicreate():
                 error_message = "Looks like you already have a Tryp on the same date. Please leave that Tryp first before creating a new one."
                 return jsonify({"error": error_message})
             else:
-                new_ride = Ride(rideDate=rideDate, rideTime=rideTime, fromLocationId = from_location_id, toLocationId=to_location_id, seatsRemaining = seatsRemaining)
+                new_ride = Ride(rideDate=rideDate, rideTime=rideTime, seatsRemaining = seatsRemaining, startLocationName = startLocationName, startLatitude = startLatitude, startLongitude = startLongitude, endLocationName = endLocationName, endLatitude = endLatitude, endLongitude = endLongitude)
                 print(new_ride)
                 db.session.add(new_ride)
                 db.session.flush()
@@ -160,20 +162,16 @@ def apicreate():
 @jwt_required()
 def apiridesQuery():
         try:
-            from_location_id = request.args.get("fromLocationId")
-            to_location_id = request.args.get("toLocationId")
             ride_date = request.args.get("rideDate")      
             start_time = datetime.strptime(request.args.get("startTime"), '%H:%M').time()
             end_time = datetime.strptime(request.args.get("endTime"), '%H:%M').time()
 
 
-            rides_list = db.session.query(Ride.id, Ride.seatsRemaining, Ride.fromLocationId, Ride.toLocationId, Ride.rideDate, Ride.rideTime).filter(
+            rides_list = db.session.query(Ride.id, Ride.seatsRemaining, Ride.rideDate, Ride.rideTime).filter(
     #           User.id == Ride.user_id,
                 Ride.id == RideUser.ride_id,
                 User.id == RideUser.user_id,
                 RideUser.isHost == True,
-                Ride.fromLocationId == from_location_id,
-                Ride.toLocationId == to_location_id,
                 Ride.rideTime.between(start_time, end_time),
                 Ride.rideDate == ride_date,
                 Ride.isDeleted == False
@@ -183,10 +181,8 @@ def apiridesQuery():
             updated_rides = []
 
             for ride in rides_list:
-                fromLocationId, toLocationId = ride[2], ride[3]
-
-                fromLocation = db.session.query(Location.location_name).filter(Location.id == fromLocationId).first()
-                toLocation = db.session.query(Location.location_name).filter(Location.id == toLocationId).first()
+                fromLocation = db.session.query(Location.location_name).first()
+                toLocation = db.session.query(Location.location_name).first()
 
                 fromLocationName = fromLocation[0] if fromLocation else None
                 toLocationName = toLocation[0] if toLocation else None
@@ -194,8 +190,6 @@ def apiridesQuery():
                 ride_info = {
                     "ride_id": ride[0],
                     "seatsRemaining": ride[1],
-                    "fromLocationId": fromLocationId,
-                    "toLocationId": toLocationId,
                     "rideDate": ride[4].strftime('%Y-%m-%d'),
                     "rideTime": ride[5].strftime('%H:%M'),
                     "fromLocationName": fromLocationName,
@@ -219,8 +213,6 @@ def apiMyRidesQuery():
         rides = db.session.query(
             Ride.id,
             Ride.seatsRemaining,
-            Ride.fromLocationId,
-            Ride.toLocationId,
             Ride.rideDate,
             Ride.rideTime,
             RideUser.isHost  # Fetch the isHost flag
@@ -237,10 +229,8 @@ def apiMyRidesQuery():
         updated_rides = []
 
         for ride in rides:
-            fromLocationId, toLocationId = ride[2], ride[3]
-
-            fromLocation = db.session.query(Location.location_name).filter(Location.id == fromLocationId).first()
-            toLocation = db.session.query(Location.location_name).filter(Location.id == toLocationId).first()
+            fromLocation = db.session.query(Location.location_name).first()
+            toLocation = db.session.query(Location.location_name).first()
 
             fromLocationName = fromLocation[0] if fromLocation else None
             toLocationName = toLocation[0] if toLocation else None
@@ -248,8 +238,6 @@ def apiMyRidesQuery():
             ride_info = {
                 "ride_id": ride[0],
                 "seatsRemaining": ride[1],
-                "fromLocationId": fromLocationId,
-                "toLocationId": toLocationId,
                 "rideDate": ride[4].strftime('%Y-%m-%d'),
                 "rideTime": ride[5].strftime('%H:%M'),
                 "fromLocationName": fromLocationName,
@@ -263,6 +251,7 @@ def apiMyRidesQuery():
     except Exception as e:
         return jsonify({"error": str(e)}), 500  # Adding a status code for the error response
 
+# hopefully we can remove this in the future
 @api_route.route("/locations", methods=["GET"])
 @jwt_required()
 def get_locations():
@@ -270,14 +259,16 @@ def get_locations():
         userId = get_jwt_identity()
         user = User.query.filter(User.id == userId).first()
         college_id = user.college_id if user else None
-
+        print(college_id)
         query = Location.query.filter(Location.college_id == college_id).all()
 
         locations_list = [
             {
                 'location_id': loc.id, 
                 'location_name': loc.location_name, 
-                'isCampus': loc.isCampus
+                'isCampus': loc.isCampus,
+                'latitude': loc.latitude,
+                'longitude': loc.longitude
             } 
             for loc in query
         ]
@@ -301,8 +292,10 @@ def apiJoin():
         dbRecord = db.session.query(Ride.id, RideUser.id).filter(
             RideUser.ride_id == Ride.id,
             RideUser.user_id == userId,
-            Ride.fromLocationId == currentRide.fromLocationId,
-            Ride.toLocationId == currentRide.toLocationId,
+            Ride.startLatitude == currentRide.startLatitude,
+            Ride.startLongitude == currentRide.startLongitude,
+            Ride.endLatitude == currentRide.endLatitude,
+            Ride.endLongitude == currentRide.endLongitude,
             Ride.rideDate == currentRide.rideDate,
             Ride.isDeleted == False,
             RideUser.isDeleted == False
@@ -344,7 +337,6 @@ def apiJoin():
                 if user_to_notify:
                     message_txt = "A new user has joined your ride group. \n www.trypsync.com \n Reply STOP to opt out of text messages."
                     send_sms(user_to_notify.telNumber, message_txt)
-
             return jsonify({"message": "Joined Ride Group!"})
         else:
             return jsonify({"error": "No seats available in this ride group."})
@@ -396,7 +388,7 @@ def apiLeave():
 def apirideDetails():
     try:
         ride_id = request.args.get("ride_id")
-        rideDetails_list = db.session.query(User.name, User.telNumber, Ride.fromLocationId, Ride.toLocationId, Ride.rideDate, Ride.rideTime, Ride.seatsRemaining).filter(
+        rideDetails_list = db.session.query(User.name, User.telNumber, Ride.rideDate, Ride.rideTime, Ride.seatsRemaining).filter(
             Ride.id == RideUser.ride_id,
             RideUser.user_id == User.id,
             Ride.id == ride_id,
@@ -408,10 +400,9 @@ def apirideDetails():
         updated_rides = []
 
         for ride in rideDetails_list:
-            fromLocationId, toLocationId = ride[2], ride[3]
-
-            fromLocation = db.session.query(Location.location_name).filter(Location.id == fromLocationId).first()
-            toLocation = db.session.query(Location.location_name).filter(Location.id == toLocationId).first()
+            
+            fromLocation = db.session.query(Location.location_name).first()
+            toLocation = db.session.query(Location.location_name).first()
 
             fromLocationName = fromLocation[0] if fromLocation else None
             toLocationName = toLocation[0] if toLocation else None
@@ -419,8 +410,6 @@ def apirideDetails():
             ride_info = {
                 "name": ride[0],
                 "telNumber": ride[1],
-                "fromLocationId": fromLocationId,
-                "toLocationId": toLocationId,
                 "rideDate": ride[4].strftime('%Y-%m-%d'),
                 "rideTime": ride[5].strftime('%H:%M'),
                 "seatsRemaining": ride[6],
@@ -565,3 +554,224 @@ def apilogout():
     print('sesion cleared')
     logout_user()
     return jsonify({'message': 'You have been logged out.'})
+
+
+def haversine(lat1, lon1, lat2, lon2):
+    # Convert latitude and longitude from degrees to radians
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    
+    # Radius of Earth in miles
+    r = 3956
+
+    return c * r
+
+# location based creation endpoint
+@api_route.route("/createRide", methods=["POST"])
+@jwt_required()
+def apicreateRide():
+        try:
+            rides_dict = request.json
+            userId = get_jwt_identity()
+            seatsRemaining = rides_dict['seatsRemaining']
+            rideDate = rides_dict['rideDate']
+            startLocationName = rides_dict['startLocationName']
+            endLocationName = rides_dict['endLocationName']
+            rideTime = datetime.strptime(rides_dict['rideTime'], '%H:%M').time()
+            startLatitude = rides_dict['startLatitude']            
+            startLongitude = rides_dict['startLongitude']            
+            endLatitude = rides_dict['endLatitude']            
+            endLongitude = rides_dict['endLongitude']            
+
+            # Check if the record already exists
+            print("user:", userId)
+            print("rides_dict", rides_dict)
+
+            dbRecord = db.session.query(Ride.id, RideUser.id).filter(
+                RideUser.ride_id == Ride.id,
+                RideUser.user_id == userId,
+                Ride.rideDate == rideDate,
+                Ride.isDeleted == False,
+                Ride.startLocationName == startLocationName,
+                Ride.endLocationName == endLocationName,
+                RideUser.isDeleted == False
+            ).all()
+            for record in dbRecord:
+                ride = db.session.query(Ride).filter(Ride.id == record[0]).first()
+         #       print(f'New ride start coordinates: ({startLatitude}, {startLongitude})')
+      #          print(f'Existing ride start coordinates: ({ride.startLatitude}, {ride.startLongitude})')
+                start_distance = haversine(startLatitude, startLongitude, ride.startLatitude, ride.startLongitude)
+     #           print(f'start_distance: {start_distance}')
+        #        print(f'New ride end coordinates: ({endLatitude}, {endLongitude})')
+        #        print(f'Existing ride end coordinates: ({ride.endLatitude}, {ride.endLongitude})')
+                end_distance = haversine(endLatitude, endLongitude, ride.endLatitude, ride.endLongitude)
+        #        print(f'end_distance: {end_distance}')
+                if start_distance <= 2 and end_distance <= 2:
+                    print('issue')
+                    error_message = "Looks like you already have a Tryp on the same date within 2 miles of the start and end locations. Please leave that Tryp first before creating a new one."
+                    return jsonify({"error": error_message})
+            new_ride = Ride(rideDate=rideDate, rideTime=rideTime, seatsRemaining = seatsRemaining, startLocationName = startLocationName, endLocationName = endLocationName, startLatitude = startLatitude, startLongitude = startLongitude, endLatitude = endLatitude, endLongitude = endLongitude)
+            print(new_ride)
+            db.session.add(new_ride)
+            db.session.flush()
+            new_ride_user = RideUser(ride_id=new_ride.id, user_id = userId, isHost=True)
+            db.session.add(new_ride_user)
+            db.session.commit()
+            return jsonify({"message": "Ride Request Created!"})
+        except Exception as e:
+            return jsonify({"error": str(e)})
+            '''
+                if (dbRecord):
+                    print('issue')
+                    error_message = "Looks like you already have a Tryp on the same date. Please leave that Tryp first before creating a new one."
+                    return jsonify({"error": error_message})
+                else:
+            s'''
+
+# location based search endpoint
+@api_route.route("/searchRides", methods=["GET"])
+@jwt_required()
+def apisearchRides():
+        try:
+            ride_date = request.args.get("rideDate")      
+            start_time = datetime.strptime(request.args.get("startTime"), '%H:%M').time()
+            end_time = datetime.strptime(request.args.get("endTime"), '%H:%M').time()
+            startLatitude = float(request.args.get("startLatitude"))
+            startLongitude = float(request.args.get("startLongitude"))
+            endLatitude = float(request.args.get("endLatitude"))
+            endLongitude = float(request.args.get("endLongitude"))
+            radius = 2  # Default to 2 miles
+
+            rides_list = db.session.query(Ride.id, Ride.seatsRemaining, Ride.rideDate, Ride.rideTime, Ride.startLocationName, Ride.endLocationName,
+                                        Ride.startLatitude, Ride.startLongitude, Ride.endLatitude, Ride.endLongitude).filter(
+                Ride.id == RideUser.ride_id,
+                User.id == RideUser.user_id,
+                RideUser.isHost == True,
+                Ride.rideTime.between(start_time, end_time),
+                Ride.rideDate == ride_date,
+                Ride.isDeleted == False,
+            ).order_by(Ride.rideTime).all()
+           
+            # Initialize an empty list to store the updated ride information
+            updated_rides = []
+            for ride in rides_list:
+                start_distance = haversine(startLatitude, startLongitude, ride.startLatitude, ride.startLongitude)
+                end_distance = haversine(endLatitude, endLongitude, ride.endLatitude, ride.endLongitude)
+                print('start_distance', start_distance)
+                print('end_distance', end_distance)
+                # Check if both distances are within the radius-mile radius
+                if start_distance <= radius and end_distance <= radius:
+                    updated_rides.append({
+                    "id": ride.id,
+                    "seatsRemaining": ride.seatsRemaining,
+                    "rideDate": ride.rideDate.strftime('%Y-%m-%d'),  # Convert date to string
+                    "rideTime": ride.rideTime.strftime('%H:%M'),  # Convert time to string
+                    "startLocationName": ride.startLocationName,
+                    "endLocationName": ride.endLocationName
+                })
+               
+            if not updated_rides:
+                return jsonify({"message": "No rides found within 2 miles of the specified start and end locations."}), 200
+            print('rides were found?')
+            return jsonify({"rides": updated_rides}), 200
+        
+        except Exception as e:
+            return jsonify({"error": str(e)})
+
+# location based rideDetails endpoint
+@api_route.route("/locRideDetails", methods=["GET"])
+@jwt_required()
+def apilocRideDetails():
+    try:
+        ride_id = request.args.get("ride_id")
+        rideDetails_list = db.session.query(User.name, User.telNumber, Ride.rideDate, Ride.rideTime, Ride.seatsRemaining, Ride.startLatitude, Ride.startLongitude, Ride.endLatitude, Ride.endLongitude, Ride.startLocationName, Ride.endLocationName).filter(
+            Ride.id == RideUser.ride_id,
+            RideUser.user_id == User.id,
+            Ride.id == ride_id,
+            Ride.isDeleted == False,
+            RideUser.isDeleted == False
+        ).order_by(RideUser.isHost.desc()).all()  # Descending order to get hosts first
+
+        # Initialize an empty list to store the updated ride information
+        updated_rides = []
+        
+        for ride in rideDetails_list:
+            print('fromlocation', ride[9])
+            ride_info = {
+                "name": ride[0],
+                "telNumber": ride[1],
+                "rideDate": ride[2].strftime('%Y-%m-%d'),
+                "rideTime": ride[3].strftime('%H:%M'),
+                "seatsRemaining": ride[4],
+                "startLatitude": ride[5],
+                "startLongitude": ride[6],
+                "endLatitude": ride[7],
+                "endLongitude": ride[8],
+                "fromLocationName": ride[9],  # startLocationName
+                "toLocationName": ride[10]    # endLocationName
+            }
+            updated_rides.append(ride_info)
+
+        return jsonify(rides=updated_rides)
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    
+
+@api_route.route("/myLocRideSearch", methods=["GET"])
+@jwt_required()
+def apiMyLocRidesQuery():
+    try:
+        print('myRideSearch')
+        userId = get_jwt_identity()
+        print('userId', userId)
+
+        # Join RideUser and Ride models to get ride details along with isHost flag
+        rides = db.session.query(
+            Ride.id,
+            Ride.seatsRemaining,
+            Ride.rideDate,
+            Ride.rideTime,
+            RideUser.isHost,  # Fetch the isHost flag
+            Ride.startLatitude,
+            Ride.startLongitude,
+            Ride.endLatitude,
+            Ride.endLongitude,
+            Ride.startLocationName,
+            Ride.endLocationName
+        ).join(
+            RideUser, Ride.id == RideUser.ride_id
+        ).filter(
+            RideUser.user_id == userId,
+            RideUser.isDeleted == False,
+            Ride.isDeleted == False,
+            Ride.rideDate >= date.today() - timedelta(days=2)
+        ).order_by(Ride.rideTime).all()
+
+        # Initialize an empty list to store the updated ride information
+        updated_rides = []
+
+        for ride in rides:
+            ride_info = {
+                "ride_id": ride[0],
+                "seatsRemaining": ride[1],
+                "rideDate": ride[2].strftime('%Y-%m-%d'),
+                "rideTime": ride[3].strftime('%H:%M'),
+                "isHost": ride[4],  # Add the isHost flag to the response
+                "startLatitude": ride[5],
+                "startLongitude": ride[6],
+                "endLatitude": ride[7],
+                "endLongitude": ride[8],
+                "fromLocationName": ride[9],  # startLocationName
+                "toLocationName": ride[10]    # endLocationName
+            }
+
+            updated_rides.append(ride_info)
+
+        return jsonify(updated_rides)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500  # Adding a status code for the error response
