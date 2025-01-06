@@ -595,6 +595,16 @@ def apicreateRide():
             endLatitude = rides_dict['endLatitude']            
             endLongitude = rides_dict['endLongitude']            
 
+            # Validate required fields
+            if not startLatitude or not startLongitude:
+                return jsonify({"error": "Valid Start location is required."}), 400
+            if not endLatitude or not endLongitude:
+                return jsonify({"error": "Valid Destination is required."}), 400
+
+            # Validate required fields
+            if startLatitude == endLatitude and startLongitude == endLongitude:
+                return jsonify({"error": "Start location and Destination cannot be the same."}), 400
+
             # Ensure rideDate is today or in the future
             if date.fromisoformat(rideDate) < date.today():
                 return jsonify({"error": "Ride date cannot be in the past."}), 400
