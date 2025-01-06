@@ -2,7 +2,7 @@ from flask import Flask, flash, redirect, url_for, render_template, request, ses
 from datetime import timedelta, time
 from sqlalchemy import func
 import dateutil
-from model import Ride, db, Ride_Archive, User, College, Location
+from model import RideUser, Ride, db, Ride_Archive, User, College, Location
 from flask_migrate import Migrate
 import json
 from flask_bcrypt import Bcrypt
@@ -149,18 +149,24 @@ if __name__ == "__main__":
     with app.app_context():
 
     #     db.drop_all()
-    #     print('dropped')
+        db.engine.execute('DROP TABLE IF EXISTS "ride_user" CASCADE')
+        db.engine.execute('DROP TABLE IF EXISTS "ride__archive" CASCADE')
+        db.engine.execute('DROP TABLE IF EXISTS "ride" CASCADE')
+
+        print('Dropped tables: ride_user, ride_archive, ride')
+
+        # Create the tables (in dependency order)
+        Ride.__table__.create(db.engine)         # Create `ride` table first
+        Ride_Archive.__table__.create(db.engine) # Create `ride_archive` next
+        RideUser.__table__.create(db.engine)     # Create `ride_user` last
+
+        db.session.commit()
+
     #     db.create_all()
     #     college1 = College(college_name="Emory University", email_pattern = "@emory.edu")
     #     college2 = College(college_name="Oxford College of Emory University", email_pattern = "@emory.edu")
-    #  #   location1 = Location(college_id=1, location_name="Emory Atlanta Campus", isCampus=True)
-    #  #   location2 = Location(college_id=1, location_name="ATL Hartsfield-Jackson Airport", )
-    #     location3 = Location(college_id=2,location_name="Oxford Campus", latitude=33.6209, longitude=-83.8675, isCampus=True)
-    #     location4 = Location(college_id=2, location_name="ATL Hartsfield-Jackson Airport", latitude=33.6324, longitude=-84.4333)
-    #   #  location5 = Location(college_id=2, location_name="Emory Atlanta Campus")
 
     #     #location 1 location 2 location5
-    #     db.session.add_all([college1, college2, location3, location4])
     #     db.session.commit()
 
         port = int(os.environ.get("PORT",5000))

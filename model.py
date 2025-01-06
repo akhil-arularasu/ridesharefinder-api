@@ -64,6 +64,13 @@ class Ride_Archive(db.Model):
     updateTS = db.Column("UpdatedAt", db.Time, default=datetime.now().time())
     isDeleted = db.Column("isDeleted", db.Boolean, nullable=False, default = False)
     seatsRemaining = db.Column("seatsRemaining", db.Integer, default = 3)
+    startLocationName = db.Column(db.String(255), nullable = False)
+    startLatitude = db.Column(db.Float, nullable = False)
+    startLongitude = db.Column(db.Float, nullable = False)
+    endLocationName = db.Column(db.String(255), nullable = False)
+    endLatitude = db.Column(db.Float, nullable = False)
+    endLongitude = db.Column(db.Float, nullable = False)
+
 
 class User(UserMixin, db.Model):
 
