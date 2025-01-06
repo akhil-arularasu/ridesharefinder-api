@@ -14,7 +14,7 @@ class College(db.Model):
     email_pattern = db.Column("email_pattern", db.String, nullable=False)
     college_name = db.Column("college_name", db.String)
     students = db.relationship('User', backref='college', lazy='dynamic') # foreign key setup
-
+    
     def get_colleges():
     # Query the database to get a list of college objects
         college_objects = College.query.all()
@@ -27,6 +27,9 @@ class Location(db.Model):
     college_id = db.Column("college_id", db.Integer)  # Use the appropriate column type and length
     location_name = db.Column("location_name", db.String)
     isCampus = db.Column("isCampus", db.Boolean, nullable=False, default = False)
+    latitude = db.Column(db.Float, nullable = False)
+    longitude = db.Column(db.Float, nullable = False)
+
 
 class RideUser(db.Model):
     id = db.Column("id", db.Integer, primary_key = True)
@@ -39,19 +42,22 @@ class RideUser(db.Model):
 
 class Ride(db.Model):
     id = db.Column("id", db.Integer, primary_key = True)
-    fromLocationId = db.Column("from_location_id", db.Integer)
-    toLocationId = db.Column("to_location_id", db.Integer)
     rideDate = db.Column("Date", db.Date)
     rideTime = db.Column("Departure Time", db.Time)
     createTS = db.Column("CreatedAt", db.Time, default=datetime.now().time())    
     updateTS = db.Column("UpdatedAt", db.Time, default=datetime.now().time())
     isDeleted = db.Column("isDeleted", db.Boolean, nullable=False, default = False)
     seatsRemaining = db.Column("seatsRemaining", db.Integer, default = 3)
+    startLocationName = db.Column(db.String(255), nullable = False)
+    startLatitude = db.Column(db.Float, nullable = False)
+    startLongitude = db.Column(db.Float, nullable = False)
+    endLocationName = db.Column(db.String(255), nullable = False)
+    endLatitude = db.Column(db.Float, nullable = False)
+    endLongitude = db.Column(db.Float, nullable = False)
+
 
 class Ride_Archive(db.Model):
     id = db.Column("id", db.Integer, primary_key = True)
-    fromLocationId = db.Column("from_location_id", db.Integer)
-    toLocationId = db.Column("to_location_id", db.Integer)
     rideDate = db.Column("Date", db.Integer)
     rideTime = db.Column("Departure Time", db.Time)
     createTS = db.Column("CreatedAt", db.Time, default=datetime.now().time())    

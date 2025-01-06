@@ -148,19 +148,20 @@ if __name__ == "__main__":
 
     with app.app_context():
 
-        # db.drop_all()
-        # print('dropped')
-        # db.create_all()
-        # college1 = College(college_name="Emory University", email_pattern = "@emory.edu")
-        # college2 = College(college_name="Oxford College of Emory University", email_pattern = "@emory.edu")
-        # location1 = Location(college_id=1, location_name="Emory Atlanta Campus", isCampus=True)
-        # location2 = Location(college_id=1, location_name="ATL Hartsfield-Jackson Airport")
-        # location3 = Location(college_id=2,location_name="Oxford Campus", isCampus=True)
-        # location4 = Location(college_id=2, location_name="ATL Hartsfield-Jackson Airport")
-        # location5 = Location(college_id=2, location_name="Emory Atlanta Campus")
+    #     db.drop_all()
+    #     print('dropped')
+    #     db.create_all()
+    #     college1 = College(college_name="Emory University", email_pattern = "@emory.edu")
+    #     college2 = College(college_name="Oxford College of Emory University", email_pattern = "@emory.edu")
+    #  #   location1 = Location(college_id=1, location_name="Emory Atlanta Campus", isCampus=True)
+    #  #   location2 = Location(college_id=1, location_name="ATL Hartsfield-Jackson Airport", )
+    #     location3 = Location(college_id=2,location_name="Oxford Campus", latitude=33.6209, longitude=-83.8675, isCampus=True)
+    #     location4 = Location(college_id=2, location_name="ATL Hartsfield-Jackson Airport", latitude=33.6324, longitude=-84.4333)
+    #   #  location5 = Location(college_id=2, location_name="Emory Atlanta Campus")
 
-        # db.session.add_all([college1, college2, location1, location2, location3, location4, location5])
-        # db.session.commit()
+    #     #location 1 location 2 location5
+    #     db.session.add_all([college1, college2, location3, location4])
+    #     db.session.commit()
 
         port = int(os.environ.get("PORT",5000))
         if (app.config ['ENVIRONMENT'] == 'dev'):
