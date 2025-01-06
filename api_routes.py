@@ -288,6 +288,10 @@ def apiJoin():
         # Retrieve the ride record
         currentRide = Ride.query.filter_by(id=ride_id).first_or_404()
         
+        if currentRide.rideDate < date.today():
+            return jsonify({"error": "You cannot join a ride that is scheduled for a past date."})
+
+
         # see users Tryps that day and time
         dbRecord = db.session.query(Ride.id, RideUser.id).filter(
             RideUser.ride_id == Ride.id,
@@ -337,7 +341,7 @@ def apiJoin():
                 if user_to_notify:
                     message_txt = "A new user has joined your ride group. \n www.trypsync.com \n Reply STOP to opt out of text messages."
                     send_sms(user_to_notify.telNumber, message_txt)
-            return jsonify({"message": "Joined Ride Group!"})
+            return jsonify({"message": "Joined Ride Group!",  "ride_id": ride_id})
         else:
             return jsonify({"error": "No seats available in this ride group."})
 
@@ -349,8 +353,10 @@ def apiJoin():
 def apiLeave():
     try:
         rides_dict = request.json
+        print('leaving ride_id', rides_dict)
         ride_id = rides_dict['ride_id']
         userId = get_jwt_identity()
+
         currentRide = Ride.query.filter(Ride.id == ride_id).first_or_404()
         currentRideUser = RideUser.query.filter_by(ride_id=ride_id, user_id = userId, isDeleted = False).first_or_404()
         if currentRideUser:
@@ -379,7 +385,8 @@ def apiLeave():
                 send_sms(user_to_notify.telNumber, message_txt)
 
         print('left')
-        return jsonify({"message": "Left Ride Group."})
+        print('left ride_id', ride_id)
+        return jsonify({"message": "Left Ride Group.", "ride_id": ride_id})
     except Exception as e:
         return jsonify({"error": str(e)})
 
@@ -588,6 +595,10 @@ def apicreateRide():
             endLatitude = rides_dict['endLatitude']            
             endLongitude = rides_dict['endLongitude']            
 
+            # Ensure rideDate is today or in the future
+            if date.fromisoformat(rideDate) < date.today():
+                return jsonify({"error": "Ride date cannot be in the past."}), 400
+
             # Check if the record already exists
             print("user:", userId)
             print("rides_dict", rides_dict)
@@ -622,7 +633,16 @@ def apicreateRide():
             new_ride_user = RideUser(ride_id=new_ride.id, user_id = userId, isHost=True)
             db.session.add(new_ride_user)
             db.session.commit()
-            return jsonify({"message": "Ride Request Created!"})
+            return jsonify({
+                "message": "Ride Request Created!",
+                "ride": {
+                "rideDate": new_ride.rideDate.strftime('%Y-%m-%d'),
+                "rideTime": new_ride.rideTime.strftime('%H:%M'),
+                "seatsRemaining": new_ride.seatsRemaining,
+                "startLocationName": new_ride.startLocationName,
+                "endLocationName": new_ride.endLocationName
+            }
+                            })
         except Exception as e:
             return jsonify({"error": str(e)})
             '''
@@ -647,18 +667,42 @@ def apisearchRides():
             endLongitude = float(request.args.get("endLongitude"))
             radius = 2  # Default to 2 miles
 
-            rides_list = db.session.query(Ride.id, Ride.seatsRemaining, Ride.rideDate, Ride.rideTime, Ride.startLocationName, Ride.endLocationName,
-                                        Ride.startLatitude, Ride.startLongitude, Ride.endLatitude, Ride.endLongitude).filter(
-                Ride.id == RideUser.ride_id,
-                User.id == RideUser.user_id,
+            # Get the user ID and their college ID
+            userId = get_jwt_identity()
+            user = User.query.filter_by(id=userId).first_or_404()
+            userCollegeId = user.college_id
+
+            # Query rides hosted by users from the same college
+            rides_list = db.session.query(
+                Ride.id,
+                Ride.seatsRemaining,
+                Ride.rideDate,
+                Ride.rideTime,
+                Ride.startLocationName,
+                Ride.endLocationName,
+                Ride.startLatitude,
+                Ride.startLongitude,
+                Ride.endLatitude,
+                Ride.endLongitude
+            ).join(
+                RideUser, Ride.id == RideUser.ride_id
+            ).join(
+                User, RideUser.user_id == User.id
+            ).filter(
                 RideUser.isHost == True,
                 Ride.rideTime.between(start_time, end_time),
                 Ride.rideDate == ride_date,
                 Ride.isDeleted == False,
-            ).order_by(Ride.rideTime).all()
+                User.college_id == userCollegeId  # Ensure host is from the same college
+            ).order_by(
+                Ride.rideTime
+            ).all()
            
+            print('hello', rides_list)
+
             # Initialize an empty list to store the updated ride information
             updated_rides = []
+         #   print('hello', rides_list)
             for ride in rides_list:
                 start_distance = haversine(startLatitude, startLongitude, ride.startLatitude, ride.startLongitude)
                 end_distance = haversine(endLatitude, endLongitude, ride.endLatitude, ride.endLongitude)
@@ -667,7 +711,7 @@ def apisearchRides():
                 # Check if both distances are within the radius-mile radius
                 if start_distance <= radius and end_distance <= radius:
                     updated_rides.append({
-                    "id": ride.id,
+                    "ride_id": ride.id,
                     "seatsRemaining": ride.seatsRemaining,
                     "rideDate": ride.rideDate.strftime('%Y-%m-%d'),  # Convert date to string
                     "rideTime": ride.rideTime.strftime('%H:%M'),  # Convert time to string
