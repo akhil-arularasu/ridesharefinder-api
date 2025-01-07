@@ -144,37 +144,37 @@ def save(text, filepath='suggestions.txt'):
     with open("suggestions.txt", "a") as f:
         f.write(text)        
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
 
-with app.app_context():
+    with app.app_context():
 
-#     db.drop_all()
-    db.engine.execute('DROP TABLE IF EXISTS "ride_user" CASCADE')
-    db.engine.execute('DROP TABLE IF EXISTS "ride__archive" CASCADE')
-    db.engine.execute('DROP TABLE IF EXISTS "ride" CASCADE')
+    #     db.drop_all()
+     #   db.engine.execute('DROP TABLE IF EXISTS "ride_user" CASCADE')
+     #   db.engine.execute('DROP TABLE IF EXISTS "ride__archive" CASCADE')
+     #   db.engine.execute('DROP TABLE IF EXISTS "ride" CASCADE')
 
-    print('Dropped tables: ride_user, ride_archive, ride')
+      #  print('Dropped tables: ride_user, ride_archive, ride')
 
-    # Create the tables (in dependency order)
-    Ride.__table__.create(db.engine)         # Create `ride` table first
-    Ride_Archive.__table__.create(db.engine) # Create `ride_archive` next
-    RideUser.__table__.create(db.engine)     # Create `ride_user` last
+        # Create the tables (in dependency order)
+     #   Ride.__table__.create(db.engine)         # Create `ride` table first
+     #   Ride_Archive.__table__.create(db.engine) # Create `ride_archive` next
+      #  RideUser.__table__.create(db.engine)     # Create `ride_user` last
 
-    db.session.commit()
+    #    db.session.commit()
 
-#     db.create_all()
-#     college1 = College(college_name="Emory University", email_pattern = "@emory.edu")
-#     college2 = College(college_name="Oxford College of Emory University", email_pattern = "@emory.edu")
+    #     db.create_all()
+    #     college1 = College(college_name="Emory University", email_pattern = "@emory.edu")
+    #     college2 = College(college_name="Oxford College of Emory University", email_pattern = "@emory.edu")
 
-#     #location 1 location 2 location5
-#     db.session.commit()
+    #     #location 1 location 2 location5
+    #     db.session.commit()
 
-   # port = int(os.environ.get("PORT",5000))
-  #  if (app.config ['ENVIRONMENT'] == 'dev'):
-   #     app.run(debug=True)
-   # else:
-  #      app.run(host="0.0.0.0",port=port)
+        port = int(os.environ.get("PORT",5000))
+        if (app.config ['ENVIRONMENT'] == 'dev'):
+            app.run(debug=True)
+        else:
+            app.run(host="0.0.0.0",port=port)
 
-#    if 'liveconsole' not in gethostname():
-#        app.run(debug=True)
-    
+    #    if 'liveconsole' not in gethostname():
+    #        app.run(debug=True)
+        
